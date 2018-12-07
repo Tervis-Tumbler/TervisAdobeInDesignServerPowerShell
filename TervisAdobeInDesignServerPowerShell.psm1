@@ -55,7 +55,7 @@ $Script:InDesignServerInstances = [PSCustomObject]@{
 } |
 Add-Member -PassThru -MemberType ScriptProperty -Name WebServiceProxy -Value {
     $This | Add-Member -Force -MemberType NoteProperty -Name WebServiceProxy -Value $(
-        $Proxy = New-WebServiceProxy -Class InDesignServer -Namespace InDesignServer -Uri (
+        $Proxy = New-WebServiceProxy -Class "InDesignServer$($This.Port)" -Namespace "InDesignServer$($This.Port)" -Uri (
             Get-InDesignServerWSDLURI -ComputerName $This.ComputerName -Port $This.Port
         )
         $Proxy.Url = "http://$($This.ComputerName):$($This.Port)/"
@@ -78,20 +78,34 @@ function Invoke-TervisInDesignServerRunScript {
         $InDesignServerInstances = (Get-InDesignServerInstance)
     )
 
-    $InDesignServerInstance = Lock-TervisInDesignServerInstance -InDesignServerInstances $InDesignServerInstances
+    $InDesignServerInstance = Select-InDesignServerInstance -InDesignServerInstances $InDesignServerInstances -SelectionMethod Random
 
     $Proxy = $InDesignServerInstance.WebServiceProxy
-    $Parameter = New-Object -TypeName InDesignServer.RunScriptParameters -Property $PSBoundParameters
+    $RunScriptParametersProperty = $PSBoundParameters | ConvertFrom-PSBoundParameters -ExcludeProperty InDesignServerInstances -AsHashTable
+    $Parameter = New-Object -TypeName "InDesignServer$($InDesignServerInstance.Port).RunScriptParameters" -Property $RunScriptParametersProperty
     $ErrorString = ""
-    $Results = New-Object -TypeName InDesignServer.Data
+    $Results = New-Object -TypeName "InDesignServer$($InDesignServerInstance.Port).Data"
 
     Start-RSJob -ScriptBlock {
         $Response = $($Using:Proxy).RunScript($Using:Parameter, [Ref]$Using:ErrorString, [ref]$Using:Results)
-        Write-Error -Message $Using:ErrorString
-        Write-Verbose -Message $Response.result
+        if ($Using:ErrorString) { Write-Error -Message $Using:ErrorString }
+        if ($Response.result) { Write-Verbose -Message $Response.result }
         $Using:Results
     
-        $($Using:InDesignServerInstance).Locked = $False    
+        $($Using:InDesignServerInstance).Locked = $False
+    }
+}
+
+function Select-InDesignServerInstance {
+    param (
+        [Parameter(Mandatory)]$InDesignServerInstances,
+        [ValidateSet("Lock","Random")][Parameter(Mandatory)]$SelectionMethod
+    )
+    if ($SelectionMethod -eq "Lock") {
+        Lock-TervisInDesignServerInstance -InDesignServerInstances $InDesignServerInstances
+    } elseif ($SelectionMethod -eq "Random") {
+        $RandomIndex = (Get-Random) % $InDesignServerInstances.Count
+        $InDesignServerInstances[$RandomIndex]
     }
 }
 
@@ -99,13 +113,19 @@ function Lock-TervisInDesignServerInstance {
     param (
         $InDesignServerInstances
     )
-    Lock-Object -InputObject $InDesignServerInstances -ScriptBlock {
-        $InDesignServerInstance = $InDesignServerInstances |
-        Where-Object {-not $_.Locked} |
-        Select-Object -First 1
-    
-        $InDesignServerInstance.Locked = $true
-        $InDesignServerInstance
+    while (-not $InDesignServerInstance) {
+        Lock-Object -InputObject $InDesignServerInstances -ScriptBlock {
+            $InDesignServerInstance = $InDesignServerInstances |
+            Where-Object {-not $_.Locked} |
+            Select-Object -First 1
+            
+            if ($InDesignServerInstance) {
+                $InDesignServerInstance.Locked = $true
+                $InDesignServerInstance    
+            } else {
+                Start-Sleep -Seconds 1
+            }
+        }
     }
 }
 

@@ -79,24 +79,31 @@ function Invoke-TervisInDesignServerRunScript {
         $ScriptLanguage,
         $ScriptFile,
         $ScriptArgs,
-        $InDesignServerInstances = (Get-InDesignServerInstance)
+        $InDesignServerInstances = (Get-InDesignServerInstance),
+        [Switch]$AsRSJob
     )
 
     $InDesignServerInstance = Select-InDesignServerInstance -InDesignServerInstances $InDesignServerInstances -SelectionMethod Random
 
     $Proxy = $InDesignServerInstance.WebServiceProxy
-    $RunScriptParametersProperty = $PSBoundParameters | ConvertFrom-PSBoundParameters -ExcludeProperty InDesignServerInstances -AsHashTable
+    $RunScriptParametersProperty = $PSBoundParameters | ConvertFrom-PSBoundParameters -ExcludeProperty InDesignServerInstances, AsRSJob -AsHashTable
     $Parameter = New-Object -TypeName "InDesignServer$($InDesignServerInstance.Port).RunScriptParameters" -Property $RunScriptParametersProperty
     $ErrorString = ""
     $Results = New-Object -TypeName "InDesignServer$($InDesignServerInstance.Port).Data"
 
-    Start-RSJob -ScriptBlock {
+    $RSJob = Start-RSJob -ScriptBlock {
         $Response = $($Using:Proxy).RunScript($Using:Parameter, [Ref]$Using:ErrorString, [ref]$Using:Results)
         if ($Using:ErrorString) { Write-Error -Message $Using:ErrorString }
         if ($Response.result) { Write-Verbose -Message $Response.result }
         $Using:Results
     
         $($Using:InDesignServerInstance).Locked = $False
+    }
+
+    if ($AsRSJob) {
+        $RSJob
+    } else {
+        $RSJob | Wait-RSJob | Receive-RSJob
     }
 }
 

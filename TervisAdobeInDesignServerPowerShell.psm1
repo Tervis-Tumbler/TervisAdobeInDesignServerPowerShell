@@ -1,6 +1,10 @@
 $Script:InDesignServerComputerName = Get-TervisApplicationNode -ApplicationName InDesign -IncludeCredential:$False -IncludeIPAddress:$false |
 Select-Object -ExpandProperty ComputerName
 
+function Get-TervisInDesignServerComputerName {
+    $Script:InDesignServerComputerName
+}
+
 function Set-TervisInDesignServerComputerName {
     Set-InDesignServerComputerName -ComputerName $Script:InDesignServerComputerName
 }

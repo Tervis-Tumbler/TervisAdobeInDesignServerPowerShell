@@ -94,7 +94,10 @@ function Invoke-TervisInDesignServerRunScript {
     $Results = New-Object -TypeName "InDesignServer$($InDesignServerInstance.Port).Data"
 
     if (-not $AsRSJob) {
+        #$SessionID = $Proxy.BeginSession()
         $Response = $Proxy.RunScript($Parameter, [Ref]$ErrorString, [Ref]$Results)
+        #$Proxy.EndSession($SessionID)
+        
         if ($ErrorString) { Write-Error -Message $ErrorString }
         if ($Response.result) { Write-Verbose -Message $Response.result }
         $Results

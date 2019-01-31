@@ -7,8 +7,10 @@ function Get-TervisInDesignServerComputerName {
 }
 
 function Set-TervisInDesignServerComputerName {
-    Set-InDesignServerComputerName -ComputerName $Script:InDesignServerComputerName
+    Set-InDesignServerComputerName -ComputerName $(Get-TervisInDesignServerComputerName)
 }
+
+Set-TervisInDesignServerComputerName
 
 function Get-InDesignServerInstance {
     if (-not $Script:InDesignServerInstances) {
@@ -59,6 +61,38 @@ function Get-InDesignServerInstance {
         [PSCustomObject]@{
             ComputerName = (Get-TervisInDesignServerComputerName)
             Port = 8091
+        },
+        [PSCustomObject]@{
+            ComputerName = (Get-TervisInDesignServerComputerName)
+            Port = 8092
+        },
+        [PSCustomObject]@{
+            ComputerName = (Get-TervisInDesignServerComputerName)
+            Port = 8093
+        },
+        [PSCustomObject]@{
+            ComputerName = (Get-TervisInDesignServerComputerName)
+            Port = 8094
+        },
+        [PSCustomObject]@{
+            ComputerName = (Get-TervisInDesignServerComputerName)
+            Port = 8095
+        },
+        [PSCustomObject]@{
+            ComputerName = (Get-TervisInDesignServerComputerName)
+            Port = 8096
+        },
+        [PSCustomObject]@{
+            ComputerName = (Get-TervisInDesignServerComputerName)
+            Port = 8097
+        },
+        [PSCustomObject]@{
+            ComputerName = (Get-TervisInDesignServerComputerName)
+            Port = 8098
+        },
+        [PSCustomObject]@{
+            ComputerName = (Get-TervisInDesignServerComputerName)
+            Port = 8099
         } |
         Add-Member -PassThru -MemberType ScriptProperty -Name WebServiceProxy -Value {
             $This | Add-Member -Force -MemberType NoteProperty -Name WebServiceProxy -Value $(

@@ -115,14 +115,15 @@ function Invoke-TervisInDesignServerRunScript {
         $ScriptLanguage,
         $ScriptFile,
         $ScriptArgs,
+        $Port,
         $InDesignServerInstances = (Get-InDesignServerInstance),
         [Switch]$AsRSJob
     )
 
-    $InDesignServerInstance = Select-InDesignServerInstance -InDesignServerInstances $InDesignServerInstances -SelectionMethod Random
+    $InDesignServerInstance = Select-InDesignServerInstance -InDesignServerInstances $InDesignServerInstances -SelectionMethod Port -Port $Port
 
     $Proxy = $InDesignServerInstance.WebServiceProxy
-    $RunScriptParametersProperty = $PSBoundParameters | ConvertFrom-PSBoundParameters -ExcludeProperty InDesignServerInstances, AsRSJob -AsHashTable
+    $RunScriptParametersProperty = $PSBoundParameters | ConvertFrom-PSBoundParameters -ExcludeProperty InDesignServerInstances, Port, AsRSJob -AsHashTable
     $Parameter = New-Object -TypeName "InDesignServer$($InDesignServerInstance.Port).RunScriptParameters" -Property $RunScriptParametersProperty
     $ErrorString = ""
     $Results = New-Object -TypeName "InDesignServer$($InDesignServerInstance.Port).Data"
@@ -152,13 +153,17 @@ function Invoke-TervisInDesignServerRunScript {
 function Select-InDesignServerInstance {
     param (
         [Parameter(Mandatory)]$InDesignServerInstances,
-        [ValidateSet("Lock","Random")][Parameter(Mandatory)]$SelectionMethod
+        [ValidateSet("Lock","Random","Port")][Parameter(Mandatory)]$SelectionMethod,
+        [String]$Port
     )
     if ($SelectionMethod -eq "Lock") {
         Lock-TervisInDesignServerInstance -InDesignServerInstances $InDesignServerInstances
     } elseif ($SelectionMethod -eq "Random") {
         $RandomIndex = (Get-Random) % $InDesignServerInstances.Count
         $InDesignServerInstances[$RandomIndex]
+    } elseif ($SelectionMethod -eq "Port") {
+        $Index = $Port.Substring($Port.length - 2)
+        $InDesignServerInstances[$Index]
     }
 }
 

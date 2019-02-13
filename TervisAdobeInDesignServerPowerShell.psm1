@@ -204,9 +204,6 @@ function Invoke-TervisAdobeInDesignServerProvision {
     Disable-InternetExplorerESC -ComputerName $ComputerName
     
     Read-Host "\\tervis.prv\applications\Installers\Adobe\Adobe InDesign CC Server 2019\Set-up.exe"
-    #Invoke-Command -ComputerName $ComputerName -ScriptBlock {
-    #    & "\\tervis.prv\applications\Installers\Adobe\Adobe InDesign CC Server 2019\Set-up.exe"
-    #}
 
     Get-TervisAdobeProvisioningToolkitSerializeInDesignServerProvisioningXML -OutPath $RemotePath
     Invoke-AdobeProvisioningToolkitSerializeLoad -ProvisioningXMLFilePath $RemotePath\prov.xml -ComputerName $ComputerName
@@ -215,6 +212,4 @@ function Invoke-TervisAdobeInDesignServerProvision {
     Install-InDesignServerMMCSnapIn
     Install-InDesignServerService
     Read-Host "Set InDesignServerService x64 service to run as Local System account"
-
-    ipmo -force AdobeInDesignPowerShell
 }

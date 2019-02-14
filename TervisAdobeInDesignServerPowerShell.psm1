@@ -216,6 +216,7 @@ function Invoke-TervisAdobeInDesignServerProvision {
     Invoke-TervisInDesignServerInstanceProvision
 
     Install-TervisWebToPrintPolaris -ComputerName $ComputerName
-    #Copy InDesingServer Template Files
+    
+    Copy-TervisWebToPinrtInDesignServerTemplate -ComputerName $ComputerName
     #Copy PDF preset
 }

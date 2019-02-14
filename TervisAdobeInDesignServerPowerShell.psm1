@@ -1,7 +1,8 @@
 function Get-TervisInDesignServerComputerName {
     if (-not $Script:InDesignServerComputerName) {
         $Script:InDesignServerComputerName = Get-TervisApplicationNode -ApplicationName InDesign -IncludeCredential:$False -IncludeIPAddress:$false |
-        Select-Object -ExpandProperty ComputerName
+        Select-Object -ExpandProperty ComputerName |
+        Select-Object -First 1 -Skip 1
     }
     $Script:InDesignServerComputerName
 }
@@ -212,4 +213,9 @@ function Invoke-TervisAdobeInDesignServerProvision {
     Install-InDesignServerMMCSnapIn
     Install-InDesignServerService
     Read-Host "Set InDesignServerService x64 service to run as Local System account"
+    Invoke-TervisInDesignServerInstanceProvision
+
+    Install-TervisWebToPrintPolaris -ComputerName $ComputerName
+    #Copy InDesingServer Template Files
+    #Copy PDF preset
 }

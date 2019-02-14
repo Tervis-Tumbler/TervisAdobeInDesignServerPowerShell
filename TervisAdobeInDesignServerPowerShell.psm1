@@ -201,7 +201,7 @@ function Get-TervisInDesignServerInstanceListeningPorts {
 
 function Invoke-TervisAdobeInDesignServerProvision {
     Invoke-ApplicationProvision -ApplicationName InDesign -EnvironmentName Infrastructure
-    $ComputerName = "INF-InDesign02"
+    $ComputerName = Get-TervisInDesignServerComputerName
     Disable-InternetExplorerESC -ComputerName $ComputerName
     
     Read-Host "\\tervis.prv\applications\Installers\Adobe\Adobe InDesign CC Server 2019\Set-up.exe"

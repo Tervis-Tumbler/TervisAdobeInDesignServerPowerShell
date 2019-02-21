@@ -13,99 +13,32 @@ function Set-TervisInDesignServerComputerName {
 
 Set-TervisInDesignServerComputerName
 
+function New-InDesignServerInstance {
+    param (
+        [Parameter(Mandatory)]$ComputerName,
+        [Parameter(Mandatory)]$Port
+    )
+    $PSBoundParameters | 
+    ConvertFrom-PSBoundParameters |
+    Add-Member -PassThru -MemberType ScriptProperty -Name WebServiceProxy -Value {
+        $This | Add-Member -Force -MemberType NoteProperty -Name WebServiceProxy -Value $(
+            $Proxy = New-WebServiceProxy -Class "InDesignServer$($This.Port)" -Namespace "InDesignServer$($This.Port)" -Uri (
+                Get-InDesignServerWSDLURI -ComputerName $This.ComputerName -Port $This.Port
+            )
+            $Proxy.Url = "http://$($This.ComputerName):$($This.Port)/"
+            $Proxy
+        )
+        $This.WebServiceProxy
+    } |
+    Add-Member -MemberType NoteProperty -Name Locked -Value $False -Force -PassThru
+}
+
 function Get-InDesignServerInstance {
     if (-not $Script:InDesignServerInstances) {
-        $Script:InDesignServerInstances = [PSCustomObject]@{
-            ComputerName = (Get-TervisInDesignServerComputerName)
-            Port = 8080
-        },
-        [PSCustomObject]@{
-            ComputerName = (Get-TervisInDesignServerComputerName)
-            Port = 8081
-        },
-        [PSCustomObject]@{
-            ComputerName = (Get-TervisInDesignServerComputerName)
-            Port = 8082
-        },
-        [PSCustomObject]@{
-            ComputerName = (Get-TervisInDesignServerComputerName)
-            Port = 8083
-        },
-        [PSCustomObject]@{
-            ComputerName = (Get-TervisInDesignServerComputerName)
-            Port = 8084
-        },
-        [PSCustomObject]@{
-            ComputerName = (Get-TervisInDesignServerComputerName)
-            Port = 8085
-        },
-        [PSCustomObject]@{
-            ComputerName = (Get-TervisInDesignServerComputerName)
-            Port = 8086
-        },
-        [PSCustomObject]@{
-            ComputerName = (Get-TervisInDesignServerComputerName)
-            Port = 8087
-        },
-        [PSCustomObject]@{
-            ComputerName = (Get-TervisInDesignServerComputerName)
-            Port = 8088
-        },
-        [PSCustomObject]@{
-            ComputerName = (Get-TervisInDesignServerComputerName)
-            Port = 8089
-        },
-        [PSCustomObject]@{
-            ComputerName = (Get-TervisInDesignServerComputerName)
-            Port = 8090
-        },
-        [PSCustomObject]@{
-            ComputerName = (Get-TervisInDesignServerComputerName)
-            Port = 8091
-        },
-        [PSCustomObject]@{
-            ComputerName = (Get-TervisInDesignServerComputerName)
-            Port = 8092
-        },
-        [PSCustomObject]@{
-            ComputerName = (Get-TervisInDesignServerComputerName)
-            Port = 8093
-        },
-        [PSCustomObject]@{
-            ComputerName = (Get-TervisInDesignServerComputerName)
-            Port = 8094
-        },
-        [PSCustomObject]@{
-            ComputerName = (Get-TervisInDesignServerComputerName)
-            Port = 8095
-        },
-        [PSCustomObject]@{
-            ComputerName = (Get-TervisInDesignServerComputerName)
-            Port = 8096
-        },
-        [PSCustomObject]@{
-            ComputerName = (Get-TervisInDesignServerComputerName)
-            Port = 8097
-        },
-        [PSCustomObject]@{
-            ComputerName = (Get-TervisInDesignServerComputerName)
-            Port = 8098
-        },
-        [PSCustomObject]@{
-            ComputerName = (Get-TervisInDesignServerComputerName)
-            Port = 8099
-        } |
-        Add-Member -PassThru -MemberType ScriptProperty -Name WebServiceProxy -Value {
-            $This | Add-Member -Force -MemberType NoteProperty -Name WebServiceProxy -Value $(
-                $Proxy = New-WebServiceProxy -Class "InDesignServer$($This.Port)" -Namespace "InDesignServer$($This.Port)" -Uri (
-                    Get-InDesignServerWSDLURI -ComputerName $This.ComputerName -Port $This.Port
-                )
-                $Proxy.Url = "http://$($This.ComputerName):$($This.Port)/"
-                $Proxy
-            )
-            $This.WebServiceProxy
-        } |
-        Add-Member -MemberType NoteProperty -Name Locked -Value $False -Force -PassThru
+        $Script:InDesignServerInstances = 8080..8099 |
+        ForEach-Object {
+            New-InDesignServerInstance -ComputerName (Get-TervisInDesignServerComputerName) -Port $_
+        }
     }
     $Script:InDesignServerInstances
 }

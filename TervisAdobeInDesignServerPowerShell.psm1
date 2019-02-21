@@ -163,7 +163,19 @@ function Select-InDesignServerInstance {
         $RandomIndex = (Get-Random) % $InDesignServerInstances.Count
         $InDesignServerInstances[$RandomIndex]
     } elseif ($SelectionMethod -eq "Port") {
-        $Index = $Port.Substring($Port.length - 2)
+        #https://stackoverflow.com/questions/345187/math-mapping-numbers
+        $IndexSelector = $Port.Substring($Port.length - 2)
+        $PortSuffixLowerBound = 00
+        $PortSuffixUpperBound = 99
+        $ArrayIndexLowerBound = 0
+        $ArrayIndexUpperBound = $InDesignServerInstances.Count - 1
+        $Index = (
+            $IndexSelector - $PortSuffixLowerBound
+        ) / (
+        $PortSuffixUpperBound - $PortSuffixLowerBound
+        ) * (
+            ($ArrayIndexUpperBound - $ArrayIndexLowerBound) + $ArrayIndexLowerBound
+        )
         $InDesignServerInstances[$Index]
     }
 }

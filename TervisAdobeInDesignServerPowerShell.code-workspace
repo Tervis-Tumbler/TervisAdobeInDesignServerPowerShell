@@ -1,0 +1,16 @@
+{
+	"folders": [
+		{
+			"path": "..\\TervisAdobeInDesignServerPowerShell"
+		},
+		{
+			"path": "..\\AdobeProvisioningToolkitPowerShell"
+		},
+		{
+			"path": "..\\TervisAdobeProvisioningToolkitPowerShell"
+		},
+		{
+			"path": "..\\AdobeInDesignServerPowerShell"
+		}
+	]
+}

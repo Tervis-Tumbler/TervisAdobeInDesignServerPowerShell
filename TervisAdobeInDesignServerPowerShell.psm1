@@ -49,15 +49,14 @@ function Invoke-TervisInDesignServerRunScript {
         $ScriptLanguage,
         $ScriptFile,
         $ScriptArgs,
-        $Port,
         $InDesignServerInstances = (Get-InDesignServerInstance),
         [Switch]$AsRSJob
     )
 
-    $InDesignServerInstance = Select-InDesignServerInstance -InDesignServerInstances $InDesignServerInstances -SelectionMethod Port -Port $Port
+    $InDesignServerInstance = Select-InDesignServerInstance -InDesignServerInstances $InDesignServerInstances -SelectionMethod Random
 
     $Proxy = $InDesignServerInstance.WebServiceProxy
-    $RunScriptParametersProperty = $PSBoundParameters | ConvertFrom-PSBoundParameters -ExcludeProperty InDesignServerInstances, Port, AsRSJob -AsHashTable
+    $RunScriptParametersProperty = $PSBoundParameters | ConvertFrom-PSBoundParameters -ExcludeProperty InDesignServerInstances, AsRSJob -AsHashTable
     $Parameter = New-Object -TypeName "InDesignServer$($InDesignServerInstance.Port).RunScriptParameters" -Property $RunScriptParametersProperty
     $ErrorString = ""
     $Results = New-Object -TypeName "InDesignServer$($InDesignServerInstance.Port).Data"
@@ -69,7 +68,11 @@ function Invoke-TervisInDesignServerRunScript {
         
         if ($ErrorString) { Write-Error -Message $ErrorString }
         if ($Response.result) { Write-Verbose -Message $Response.result }
-        $Results
+        
+        [PSCustomObject]@{
+            Results = $Results
+            InDesignServerInstance = $InDesignServerInstance
+        }
     
         $InDesignServerInstance.Locked = $False
     } elseif ($AsRSJob) {
@@ -77,8 +80,11 @@ function Invoke-TervisInDesignServerRunScript {
             $Response = $($Using:Proxy).RunScript($Using:Parameter, [Ref]$Using:ErrorString, [ref]$Using:Results)
             if ($Using:ErrorString) { Write-Error -Message $Using:ErrorString }
             if ($Response.result) { Write-Verbose -Message $Response.result }
-            $Using:Results
-        
+            [PSCustomObject]@{
+                Results = $Using:Results
+                InDesignServerInstance = $Using:InDesignServerInstance
+            }
+
             $($Using:InDesignServerInstance).Locked = $False
         }
     }

@@ -158,7 +158,7 @@ function Invoke-TervisAdobeInDesignServerProvision {
     Read-Host "\\tervis.prv\applications\Installers\Adobe\Adobe InDesign CC Server 2019\Set-up.exe"
 
     Get-TervisAdobeProvisioningToolkitSerializeInDesignServerProvisioningXML -OutPath $RemotePath
-    Invoke-AdobeProvisioningToolkitSerializeLoad -ProvisioningXMLFilePath $RemotePath\prov.xml -ComputerName $ComputerName
+    Invoke-AdobeProvisioningToolkitVolumeSerialize -ProvisioningXMLFilePath $RemotePath\prov.xml -ComputerName $ComputerName
     
     Set-InDesignServerComputerName -ComputerName $ComputerName
     Install-InDesignServerMMCSnapIn

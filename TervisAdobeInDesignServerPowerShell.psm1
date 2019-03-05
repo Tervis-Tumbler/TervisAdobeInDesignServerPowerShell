@@ -13,26 +13,6 @@ function Set-TervisInDesignServerComputerName {
 
 Set-TervisInDesignServerComputerName
 
-function New-InDesignServerInstance {
-    param (
-        [Parameter(Mandatory)]$ComputerName,
-        [Parameter(Mandatory)]$Port
-    )
-    $PSBoundParameters | 
-    ConvertFrom-PSBoundParameters |
-    Add-Member -PassThru -MemberType ScriptProperty -Name WebServiceProxy -Value {
-        $This | Add-Member -Force -MemberType NoteProperty -Name WebServiceProxy -Value $(
-            $Proxy = New-WebServiceProxy -Class "InDesignServer$($This.Port)" -Namespace "InDesignServer$($This.Port)" -Uri (
-                Get-InDesignServerWSDLURI -ComputerName $This.ComputerName -Port $This.Port
-            )
-            $Proxy.Url = "http://$($This.ComputerName):$($This.Port)/"
-            $Proxy
-        )
-        $This.WebServiceProxy
-    } |
-    Add-Member -MemberType NoteProperty -Name Locked -Value $False -Force -PassThru
-}
-
 function Get-InDesignServerInstance {
     if (-not $Script:InDesignServerInstances) {
         $Script:InDesignServerInstances = 8080..8099 |
@@ -54,21 +34,10 @@ function Invoke-TervisInDesignServerRunScript {
     )
 
     $InDesignServerInstance = Select-InDesignServerInstance -InDesignServerInstances $InDesignServerInstances -SelectionMethod Random
-
-    $Proxy = $InDesignServerInstance.WebServiceProxy
     $RunScriptParametersProperty = $PSBoundParameters | ConvertFrom-PSBoundParameters -ExcludeProperty InDesignServerInstances, AsRSJob -AsHashTable
-    $Parameter = New-Object -TypeName "InDesignServer$($InDesignServerInstance.Port).RunScriptParameters" -Property $RunScriptParametersProperty
-    $ErrorString = ""
-    $Results = New-Object -TypeName "InDesignServer$($InDesignServerInstance.Port).Data"
 
     if (-not $AsRSJob) {
-        #$SessionID = $Proxy.BeginSession()
-        $Response = $Proxy.RunScript($Parameter, [Ref]$ErrorString, [Ref]$Results)
-        #$Proxy.EndSession($SessionID)
-        
-        if ($ErrorString) { Write-Error -Message $ErrorString }
-        if ($Response.result) { Write-Verbose -Message $Response.result }
-        
+        $Results = Invoke-InDesignServerRunScript @RunScriptParametersProperty -InDesignServerInstance $InDesignServerInstance
         [PSCustomObject]@{
             Results = $Results
             InDesignServerInstance = $InDesignServerInstance
@@ -77,11 +46,11 @@ function Invoke-TervisInDesignServerRunScript {
         $InDesignServerInstance.Locked = $False
     } elseif ($AsRSJob) {
         Start-RSJob -ScriptBlock {
-            $Response = $($Using:Proxy).RunScript($Using:Parameter, [Ref]$Using:ErrorString, [ref]$Using:Results)
-            if ($Using:ErrorString) { Write-Error -Message $Using:ErrorString }
-            if ($Response.result) { Write-Verbose -Message $Response.result }
+            $Parameters = $Using:RunScriptParametersProperty
+            $Results = Invoke-InDesignServerRunScript @Parameters -InDesignServerInstance $Using:InDesignServerInstance
+
             [PSCustomObject]@{
-                Results = $Using:Results
+                Results = $Results
                 InDesignServerInstance = $Using:InDesignServerInstance
             }
 
@@ -92,7 +61,7 @@ function Invoke-TervisInDesignServerRunScript {
 
 function Select-InDesignServerInstance {
     param (
-        [Parameter(Mandatory)]$InDesignServerInstances,
+        $InDesignServerInstances = (Get-InDesignServerInstance),
         [ValidateSet("Lock","Random","Port")][Parameter(Mandatory)]$SelectionMethod,
         [String]$Port
     )
@@ -141,7 +110,7 @@ function Lock-TervisInDesignServerInstance {
 
 function Invoke-TervisInDesignServerInstanceProvision {
     $InDesignServerInstances = (Get-InDesignServerInstance)
-    $InDesignServerInstances | New-InDesignServerInstance
+    $InDesignServerInstances | Invoke-InDesignServerInstanceProvision
 }
 
 function Get-TervisInDesignServerInstanceListeningPorts {
@@ -170,4 +139,13 @@ function Invoke-TervisAdobeInDesignServerProvision {
     
     Copy-TervisWebToPinrtInDesignServerTemplate -ComputerName $ComputerName
     Copy-TervisWebToPrintInDesingServerJobOptions -ComputerName $ComputerName
+}
+
+function Get-TervisInDesignServerWireSharkeCaptureFilter {
+    $Instances = Get-InDesignServerInstance
+    $Filters = $Instances.Port |
+    % {
+        "tcp port $_"
+    } 
+    $Filters -join " or "
 }
